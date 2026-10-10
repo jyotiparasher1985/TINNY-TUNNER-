@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+backend/media/
+backend/staticfiles/
+backend/static/
+
+# Node / Vite
+node_modules/
+dist/
+.vite/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build output
+*.log
+
+# Firebase
+.firebase/
+firebase-debug.log
+.firebaserc.local
+ui-debug.log
+*-debug.log
+
+# Misc
+DROP-POSTER-HERE/
+*.sqlite3
+*.pyc
+Thumbs.db
+.DS_Store

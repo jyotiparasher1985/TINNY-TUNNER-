@@ -1,0 +1,45 @@
+# Render blueprint — free-tier Django backend for Tiny Turners
+#
+# Deploy with:  push this repo to GitHub, then in Render:
+#   New  ->  Blueprint  ->  select the repo
+#
+# Note: Render's free web service sleeps when idle and uses an ephemeral disk.
+# Keep DATABASE_URL pointed at a managed Postgres (Render/Supabase/Neon) so
+# admission applications survive restarts.
+
+services:
+  - type: web
+    name: tiny-turners-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4
+    healthCheckPath: /api/settings/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://tiny-turners-school.web.app,https://tiny-turners-school.firebaseapp.com
+      - key: DJANGO_SECURE_SSL_REDIRECT
+        value: "0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tiny-turners-db
+          property: connectionString
+    databases:
+      - name: tiny-turners-db
+        plan: free
+
+# Cloud Run equivalent: build backend/Dockerfile and serve on $PORT.
+# gcloud run deploy tiny-turners-api --source backend --region asia-south1
