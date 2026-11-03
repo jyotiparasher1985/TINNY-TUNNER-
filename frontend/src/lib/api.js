@@ -9,6 +9,7 @@ async function request(path, options = {}) {
   let response
   try {
     response = await fetch(`${BASE}${path}`, {
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {}),

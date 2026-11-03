@@ -1,0 +1,76 @@
+@admin.register(HeroSlide)
+class HeroSlideAdmin(admin.ModelAdmin):
+    list_display = ("thumb", "title", "badge", "order", "is_published")
+    list_editable = ("order", "is_published")
+    list_display_links = ("thumb", "title")
+    search_fields = ("title", "badge", "lead")
+
+    @admin.display(description="Cover")
+    def thumb(self, obj):
+        if not obj.image:
+            return "—"
+        return format_html('<img src="{}" style="height:40px;border-radius:6px;object-fit:cover" />', obj.image.url)
+
+
+@admin.register(DifferenceCard)
+class DifferenceCardAdmin(admin.ModelAdmin):
+    list_display = ("num", "title", "icon", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("title", "body")
+
+
+@admin.register(ValueCard)
+class ValueCardAdmin(admin.ModelAdmin):
+    list_display = ("title", "icon", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("title", "body")
+
+
+@admin.register(TimelineItem)
+class TimelineItemAdmin(admin.ModelAdmin):
+    list_display = ("year", "title", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("title", "body")
+
+
+@admin.register(TeamMember)
+class TeamMemberAdmin(admin.ModelAdmin):
+    list_display = ("name", "role", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("name", "role", "note")
+
+
+@admin.register(ApproachCard)
+class ApproachCardAdmin(admin.ModelAdmin):
+    list_display = ("title", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("title", "body")
+
+
+@admin.register(DailyRoutine)
+class DailyRoutineAdmin(admin.ModelAdmin):
+    list_display = ("time", "label", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("label", "note")
+
+
+@admin.register(SafetyItem)
+class SafetyItemAdmin(admin.ModelAdmin):
+    list_display = ("title", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("title", "body")
+
+
+@admin.register(TimingRow)
+class TimingRowAdmin(admin.ModelAdmin):
+    list_display = ("time", "label", "order", "is_published")
+    list_editable = ("order", "is_published")
+    search_fields = ("label", "note")
+
+
+@admin.register(PageContent)
+class PageContentAdmin(admin.ModelAdmin):
+    list_display = ("key", "label", "is_published")
+    list_editable = ("is_published",)
+    search_fields = ("key", "label", "value")
+    readonly_fields = ("created_at", "updated_at")

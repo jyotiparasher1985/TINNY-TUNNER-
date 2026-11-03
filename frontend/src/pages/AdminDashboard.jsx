@@ -8,7 +8,6 @@ import {
   MessageSquare, LogOut, Save, Check, AlertCircle, Sliders, BarChart3,
 } from '../components/Icons'
 
-const ADMIN_KEY_STORAGE = 'tt_admin_key'
 const STATUS_LABEL = {
   NEW: 'New',
   CONTACTED: 'Contacted',
@@ -33,8 +32,10 @@ const NAV = [
 
 export default function AdminDashboard() {
   const { settings: siteSettings } = useSite()
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(ADMIN_KEY_STORAGE) || '')
-  const [keyInput, setKeyInput] = useState('')
+  const [user, setUser] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState(null)
   const [authLoading, setAuthLoading] = useState(false)
 
@@ -64,9 +65,7 @@ export default function AdminDashboard() {
         const qs = new URLSearchParams()
         if (useStatus !== 'ALL') qs.set('status', useStatus)
         if (useSearch) qs.set('search', useSearch)
-        const res = await api.get(`/api/admissions/?${qs.toString()}`, {
-          headers: { 'X-Admin-Key': key },
-        })
+        const res = await api.get(`/api/admissions/?${qs.toString()}`)
         setRows(res.admissions)
       } catch (err) {
         setError(err.message)
@@ -78,7 +77,7 @@ export default function AdminDashboard() {
     [status, search],
   )
 
-  const loadSettings = useCallback(async (key) => {
+  const loadSettings = useCallback(async () => {
     try {
       const res = await api.get('/api/settings/')
       setSettingsForm(res.settings)
@@ -87,12 +86,22 @@ export default function AdminDashboard() {
     }
   }, [])
 
-  // Auto-load when a key is remembered
+  // Check if already logged in via session cookie
   useEffect(() => {
-    if (apiKey) {
-      loadAdmissions(apiKey, { status: 'ALL', search: '' })
-      loadSettings(apiKey)
-    }
+    let active = true
+    api.get('/api/auth/me/')
+      .then((res) => {
+        if (active) {
+          setUser(res.user)
+          loadAdmissions(null, { status: 'ALL', search: '' })
+          loadSettings()
+        }
+      })
+      .catch(() => {
+        if (active) setUser(null)
+      })
+      .finally(() => active && setAuthChecked(true))
+    return () => { active = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -101,11 +110,10 @@ export default function AdminDashboard() {
     setAuthLoading(true)
     setAuthError(null)
     try {
-      const res = await api.get('/api/admissions/', { headers: { 'X-Admin-Key': keyInput } })
-      localStorage.setItem(ADMIN_KEY_STORAGE, keyInput)
-      setApiKey(keyInput)
-      setRows(res.admissions)
-      loadSettings(keyInput)
+      const res = await api.post('/api/auth/login/', { username, password })
+      setUser(res.user)
+      await loadAdmissions(null, { status: 'ALL', search: '' })
+      await loadSettings()
     } catch (err) {
       setAuthError(err.message)
     } finally {
@@ -113,20 +121,23 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem(ADMIN_KEY_STORAGE)
-    setApiKey('')
+  const handleLogout = async () => {
+    try {
+      await api.post('/api/auth/logout/', {})
+    } catch (e) {
+      /* ignore */
+    }
+    setUser(null)
     setRows(null)
     setSettingsForm(null)
-    setKeyInput('')
+    setUsername('')
+    setPassword('')
   }
 
   const handleStatusChange = async (id, nextStatus) => {
     setSaving(id)
     try {
-      await api.patch(`/api/admissions/${id}/update/`, { status: nextStatus }, {
-        'X-Admin-Key': apiKey,
-      })
+      await api.patch(`/api/admissions/${id}/update/`, { status: nextStatus })
       setRows((prev) =>
         prev.map((r) =>
           r.id === id ? { ...r, status: nextStatus, status_label: STATUS_LABEL[nextStatus] } : r,
@@ -145,9 +156,7 @@ export default function AdminDashboard() {
     setSettingsMsg(null)
     setSettingsErr(null)
     try {
-      const res = await api.patch('/api/settings/update/', settingsForm, {
-        'X-Admin-Key': apiKey,
-      })
+      const res = await api.patch('/api/settings/update/', settingsForm)
       setSettingsForm(res.settings)
       setSettingsMsg('Settings saved successfully.')
     } catch (err) {
@@ -167,7 +176,24 @@ export default function AdminDashboard() {
   }, {})
 
   // ---------------- Login gate ----------------
-  if (!apiKey) {
+  if (!authChecked) {
+    return (
+      <div className="admin-shell admin-shell--login">
+        <div className="admin-login-card">
+          <div className="admin-login-brand">
+            <img src="/images/logo.png" alt="" width="64" height="64" />
+            <div>
+              <strong>Tiny Turners</strong>
+              <span>Admin panel</span>
+            </div>
+          </div>
+          <p className="admin-login-sub">Checking session…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
     return (
       <div className="admin-shell admin-shell--login">
         <div className="admin-login-card">
@@ -180,21 +206,31 @@ export default function AdminDashboard() {
           </div>
           <h1>Sign in</h1>
           <p className="admin-login-sub">
-            Enter your admin API key to manage the school website. For full content editing
-            (notices, gallery, programmes) use the Django admin.
+            Enter your Django admin username and password to manage the school website.
           </p>
           {authError && <div className="alert alert--error">{authError}</div>}
           <form className="stack-16" onSubmit={handleLogin}>
             <div className="field">
-              <label htmlFor="adminkey">Admin API key</label>
+              <label htmlFor="username">Username</label>
               <input
-                id="adminkey"
+                id="username"
+                className="input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                autoComplete="username"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
                 className="input"
                 type="password"
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="Paste your ADMIN_API_KEY"
-                autoComplete="off"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
               />
             </div>
             <button className="btn btn--block" type="submit" disabled={authLoading}>
@@ -285,12 +321,12 @@ export default function AdminDashboard() {
               saving={saving}
               onStatusChange={setStatus}
               onSearchChange={setSearch}
-              onApply={() => loadAdmissions(apiKey)}
+              onApply={() => loadAdmissions(null)}
               onStatusUpdate={handleStatusChange}
               onReset={() => {
                 setSearch('')
                 setStatus('ALL')
-                loadAdmissions(apiKey, { status: 'ALL', search: '' })
+                loadAdmissions(null, { status: 'ALL', search: '' })
               }}
             />
           )}

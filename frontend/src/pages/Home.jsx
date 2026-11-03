@@ -47,6 +47,17 @@ const SLIDES = [
   },
 ]
 
+const ICONS = {
+  Users: <Users />,
+  Shield: <Shield />,
+  Sparkles: <Sparkles />,
+  Heart: <Heart />,
+  Book: <Book />,
+  Bus: <Bus />,
+  Calendar: <Calendar />,
+  Check: <Check />,
+}
+
 const DIFFERENCE = [
   {
     num: '01',
@@ -81,11 +92,31 @@ const FACILITY_TINTS = ['sky', 'mint', 'gold', 'red', 'sky', 'mint']
 export default function Home() {
   const { settings } = useSite()
   const { data } = useApi('/api/home/', [])
+  const { data: heroData } = useApi('/api/hero-slides/', [])
+  const { data: diffData } = useApi('/api/difference-cards/', [])
   const [slide, setSlide] = useState(0)
   const [result, setResult] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const current = SLIDES[slide]
+  const slides = (heroData?.slides?.length ? heroData.slides : SLIDES).map((s) => ({
+    badge: s.badge,
+    title: s.title,
+    lead: s.lead,
+    primary: { label: s.primary_label ?? s.primary?.label ?? 'Apply for Admission', to: s.primary_to ?? s.primary?.to ?? '/admissions' },
+    secondary: { label: s.secondary_label ?? s.secondary?.label ?? 'Explore our school', to: s.secondary_to ?? s.secondary?.to ?? '/about' },
+    image: s.image || s.image_url || SLIDES[0].image,
+    alt: s.image_alt || 'Tiny Turners school',
+  }))
+  const current = slides[slide] || slides[0]
+
+  const difference = diffData?.cards?.length
+    ? diffData.cards.map((c, i) => ({
+        num: c.num || String(i + 1).padStart(2, '0'),
+        icon: ICONS[c.icon] || <Users />,
+        title: c.title,
+        body: c.body,
+      }))
+    : DIFFERENCE
   const stats = settings.stats || {}
   const statList = [
     { value: stats.students || '320+', label: 'Happy students' },
@@ -107,7 +138,7 @@ export default function Home() {
     }
   }
 
-  const go = (dir) => setSlide((s) => (s + dir + SLIDES.length) % SLIDES.length)
+  const go = (dir) => setSlide((s) => (s + dir + slides.length) % slides.length)
 
   return (
     <>
@@ -138,7 +169,7 @@ export default function Home() {
 
             <div className="row" style={{ marginTop: 32, gap: 12 }}>
               <div className="hero__dots" role="tablist" aria-label="Hero slides">
-                {SLIDES.map((s, i) => (
+                {slides.map((s, i) => (
                   <button
                     key={s.title}
                     role="tab"
@@ -194,8 +225,8 @@ export default function Home() {
           </div>
 
           <div className="grid grid--2">
-            {DIFFERENCE.map((item, i) => (
-              <article className="card card--hover" key={item.num}>
+            {difference.map((item, i) => (
+              <article className="card card--hover" key={item.num + item.title}>
                 <div className="row" style={{ justifyContent: 'space-between' }}>
                   <div className={`card__icon card__icon--${DIFFERENCE_TINTS[i % DIFFERENCE_TINTS.length]}`}>
                     {item.icon}

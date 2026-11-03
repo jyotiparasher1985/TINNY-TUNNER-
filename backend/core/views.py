@@ -11,14 +11,24 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from .models import (
     Admission,
+    ApproachCard,
     ContactMessage,
+    DailyRoutine,
+    DifferenceCard,
     FAQ,
     Facility,
     GalleryImage,
+    HeroSlide,
+    PageContent,
     Post,
     Program,
+    SafetyItem,
     SiteSetting,
+    TeamMember,
     Testimonial,
+    TimelineItem,
+    TimingRow,
+    ValueCard,
 )
 from .serializers import (
     admission_dict,
@@ -191,6 +201,82 @@ def faqs(request):
 
 
 # --------------------------------------------------------------------------- #
+# Editable page content (public)
+# --------------------------------------------------------------------------- #
+@require_GET
+def hero_slides(request):
+    from .crud import hero_slide_dict
+    qs = HeroSlide.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "slides": [hero_slide_dict(s, request) for s in qs]})
+
+
+@require_GET
+def difference_cards(request):
+    from .crud import difference_card_dict
+    qs = DifferenceCard.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "cards": [difference_card_dict(c, request) for c in qs]})
+
+
+@require_GET
+def value_cards(request):
+    from .crud import value_card_dict
+    qs = ValueCard.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "cards": [value_card_dict(c, request) for c in qs]})
+
+
+@require_GET
+def timeline_items(request):
+    from .crud import timeline_item_dict
+    qs = TimelineItem.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "items": [timeline_item_dict(t, request) for t in qs]})
+
+
+@require_GET
+def team_members(request):
+    from .crud import team_member_dict
+    qs = TeamMember.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "members": [team_member_dict(m, request) for m in qs]})
+
+
+@require_GET
+def approach_cards(request):
+    from .crud import approach_card_dict
+    qs = ApproachCard.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "cards": [approach_card_dict(c, request) for c in qs]})
+
+
+@require_GET
+def daily_routine(request):
+    from .crud import daily_routine_dict
+    qs = DailyRoutine.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "rows": [daily_routine_dict(r, request) for r in qs]})
+
+
+@require_GET
+def safety_items(request):
+    from .crud import safety_item_dict
+    qs = SafetyItem.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "items": [safety_item_dict(s, request) for s in qs]})
+
+
+@require_GET
+def timing_rows(request):
+    from .crud import timing_row_dict
+    qs = TimingRow.objects.filter(is_published=True)
+    return JsonResponse({"ok": True, "rows": [timing_row_dict(r, request) for r in qs]})
+
+
+@require_GET
+def page_content(request):
+    from .crud import page_content_dict
+    qs = PageContent.objects.filter(is_published=True)
+    key = (request.GET.get("key") or "").strip()
+    if key:
+        qs = qs.filter(key=key)
+    return JsonResponse({"ok": True, "items": [page_content_dict(p, request) for p in qs]})
+
+
+# --------------------------------------------------------------------------- #
 # Write endpoints
 # --------------------------------------------------------------------------- #
 def read_json(request):
@@ -357,3 +443,50 @@ def _api_key_ok(request):
         return False
     provided = request.headers.get("X-Admin-Key", "")
     return provided == key
+
+
+# --------------------------------------------------------------------------- #
+# Session authentication for the React admin panel
+# --------------------------------------------------------------------------- #
+@csrf_exempt
+@require_http_methods(["POST"])
+def auth_login(request):
+    data = read_json(request)
+    if data is None:
+        return error("Malformed JSON body")
+    username = clean(data.get("username"))
+    password = data.get("password") or ""
+    if not username or not password:
+        return error("Username and password are required.", status=400)
+
+    from django.contrib.auth import authenticate, login as django_login
+
+    user = authenticate(request, username=username, password=password)
+    if user is None or not user.is_staff:
+        return error("Invalid username or password.", status=401)
+
+    django_login(request, user)
+    return JsonResponse({
+        "ok": True,
+        "user": {"username": user.username, "is_staff": user.is_staff, "is_superuser": user.is_superuser},
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def auth_logout(request):
+    from django.contrib.auth import logout as django_logout
+
+    django_logout(request)
+    return JsonResponse({"ok": True})
+
+
+@require_GET
+def auth_me(request):
+    if not request.user.is_authenticated:
+        return error("Not authenticated.", status=401)
+    user = request.user
+    return JsonResponse({
+        "ok": True,
+        "user": {"username": user.username, "is_staff": user.is_staff, "is_superuser": user.is_superuser},
+    })
