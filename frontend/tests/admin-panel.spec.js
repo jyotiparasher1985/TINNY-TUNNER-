@@ -70,6 +70,7 @@ test.describe('React admissions dashboard', () => {
       await input.fill(ADMIN_KEY)
       await page.click('button[type="submit"]')
     }
+    await page.click('button.admin-nav-item:has-text("Admissions")')
     await expect(page.locator('.admin-table')).toBeVisible({ timeout: 10_000 })
   })
 
@@ -108,6 +109,9 @@ test.describe('React admissions dashboard', () => {
     const ref = body.reference
 
     await page.reload()
+    const sc = page.locator('.splash__close')
+    if (await sc.isVisible().catch(() => false)) await sc.click()
+    await page.click('button.admin-nav-item:has-text("Admissions")')
     await expect(page.locator('.admin-table')).toBeVisible({ timeout: 10_000 })
     const row = page.locator('.admin-table tbody tr', { hasText: ref })
     await expect(row).toBeVisible({ timeout: 5_000 })

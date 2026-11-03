@@ -38,7 +38,21 @@ def _thumb(field, height=56):
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):
-    list_display = ("school_name", "phone", "email", "address")
+    list_display = ("school_name", "phone", "email", "address", "admission_session")
+    list_display_links = ("school_name",)
+
+    fieldsets = (
+        ("School identity", {
+            "fields": ("school_name", "tagline", "established", "admission_session"),
+        }),
+        ("Contact details", {
+            "fields": ("phone", "whatsapp", "email", "address", "map_url"),
+        }),
+        ("Homepage counters", {
+            "fields": ("stats",),
+            "description": "JSON object shown on the homepage stats strip, e.g. {\"students\": \"320+\", \"years\": \"18+\", \"teacher_ratio\": \"1:8\", \"activities\": \"25+\"}.",
+        }),
+    )
 
     def has_add_permission(self, request):
         return not SiteSetting.objects.exists()

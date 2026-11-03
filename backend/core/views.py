@@ -59,6 +59,41 @@ def site_settings(request):
     return JsonResponse({"ok": True, "settings": settings_dict(SiteSetting.load(), request)})
 
 
+@csrf_exempt
+@require_http_methods(["PATCH", "POST"])
+def update_settings(request):
+    if not request.user.is_authenticated and not _api_key_ok(request):
+        return error("Authentication required.", status=401)
+
+    obj = SiteSetting.load()
+    data = read_json(request)
+    if data is None:
+        return error("Malformed JSON body")
+
+    # Simple scalar fields
+    scalar = [
+        "school_name", "tagline", "phone", "whatsapp", "email", "address",
+        "map_url", "established", "admission_session",
+    ]
+    for field in scalar:
+        if field in data:
+            value = data[field]
+            if isinstance(value, str):
+                value = value.strip()
+            setattr(obj, field, value)
+
+    # Stats (JSON object)
+    if "stats" in data and isinstance(data["stats"], dict):
+        obj.stats = data["stats"]
+
+    # Validate phone
+    if "phone" in data and data["phone"] and not PHONE_RE.match(str(data["phone"]).strip()):
+        return error("Enter a valid phone number.", {"phone": "Enter a valid phone number."})
+
+    obj.save()
+    return JsonResponse({"ok": True, "settings": settings_dict(obj, request)})
+
+
 @require_GET
 def home(request):
     posts_qs = Post.objects.filter(is_published=True)

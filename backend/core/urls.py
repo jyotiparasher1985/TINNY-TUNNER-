@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     # Public content
     path("settings/", views.site_settings, name="site-settings"),
+    path("settings/update/", views.update_settings, name="settings-update"),
     path("home/", views.home, name="home"),
     path("programs/", views.programs, name="programs"),
     path("facilities/", views.facilities, name="facilities"),
