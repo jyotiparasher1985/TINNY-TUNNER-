@@ -291,3 +291,168 @@ class FAQ(TimeStamped):
 
     def __str__(self):
         return self.question
+# =========================================================================== #
+# Editable page content — makes every hardcoded section of the site editable
+# =========================================================================== #
+class HeroSlide(TimeStamped):
+    """A slide in the homepage hero carousel."""
+
+    badge = models.CharField(max_length=120)
+    title = models.CharField(max_length=200)
+    lead = models.TextField()
+    primary_label = models.CharField(max_length=60, default="Apply for Admission")
+    primary_to = models.CharField(max_length=60, default="/admissions")
+    secondary_label = models.CharField(max_length=60, default="Explore our school")
+    secondary_to = models.CharField(max_length=60, default="/about")
+    image = models.ImageField(upload_to="hero/", blank=True, null=True)
+    image_alt = models.CharField(max_length=200, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class DifferenceCard(TimeStamped):
+    """'Why parents choose us' cards on the homepage."""
+
+    num = models.CharField(max_length=4, default="01")
+    icon = models.CharField(max_length=40, default="Users")
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class ValueCard(TimeStamped):
+    """Value cards on the About page."""
+
+    icon = models.CharField(max_length=40, default="Heart")
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class TimelineItem(TimeStamped):
+    """School journey timeline on the About page."""
+
+    year = models.CharField(max_length=10)
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.year} — {self.title}"
+
+
+class TeamMember(TimeStamped):
+    """Team cards on the About page."""
+
+    name = models.CharField(max_length=120)
+    role = models.CharField(max_length=120)
+    note = models.CharField(max_length=200, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.name
+
+
+class ApproachCard(TimeStamped):
+    """'How we teach' cards on the Academics page."""
+
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class DailyRoutine(TimeStamped):
+    """A row in the 'typical day' table on Academics."""
+
+    time = models.CharField(max_length=40)
+    label = models.CharField(max_length=120)
+    note = models.CharField(max_length=200, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.time} — {self.label}"
+
+
+class SafetyItem(TimeStamped):
+    """Safety / transport cards on the Facilities page."""
+
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class TimingRow(TimeStamped):
+    """A row in the 'school timings' table on Facilities."""
+
+    time = models.CharField(max_length=40)
+    label = models.CharField(max_length=120)
+    note = models.CharField(max_length=200, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.time} — {self.label}"
+
+
+class PageContent(TimeStamped):
+    """Free-form key/value content for sections not worth a dedicated model."""
+
+    key = models.CharField(max_length=80, unique=True)
+    label = models.CharField(max_length=160, help_text="Human-readable name shown in admin.")
+    value = models.TextField(blank=True)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["key"]
+
+    def __str__(self):
+        return self.label or self.key

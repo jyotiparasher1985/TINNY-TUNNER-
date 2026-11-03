@@ -6,14 +6,24 @@ from django.utils.html import format_html
 
 from .models import (
     Admission,
+    ApproachCard,
     ContactMessage,
+    DailyRoutine,
+    DifferenceCard,
     FAQ,
     Facility,
     GalleryImage,
+    HeroSlide,
+    PageContent,
     Post,
     Program,
+    SafetyItem,
     SiteSetting,
+    TeamMember,
     Testimonial,
+    TimelineItem,
+    TimingRow,
+    ValueCard,
 )
 
 
