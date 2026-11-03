@@ -27,6 +27,11 @@ Thumbs.db
 # Build output
 *.log
 
+# Test artifacts (regenerable)
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.cache/
+
 # Firebase
 .firebase/
 firebase-debug.log
@@ -36,6 +41,7 @@ ui-debug.log
 
 # Misc
 DROP-POSTER-HERE/
+logs/
 *.sqlite3
 *.pyc
 Thumbs.db

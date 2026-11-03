@@ -1,6 +1,6 @@
 """Small dependency-free CORS middleware for the Vite dev server."""
 
-import json
+from django.http import HttpResponse
 
 from django.conf import settings
 
@@ -20,15 +20,15 @@ class CorsMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        origin = request.headers.get("Origin", "").rstrip("/")
         if request.method == "OPTIONS" and "Access-Control-Request-Method" in request.headers:
-            response = JsonPreflight(request)
+            response = HttpResponse(status=204)
         else:
             response = self.get_response(request)
-        self.add_headers(request, response)
+        self.add_headers(request, response, origin)
         return response
 
-    def add_headers(self, request, response):
-        origin = request.headers.get("Origin", "").rstrip("/")
+    def add_headers(self, request, response, origin):
         if ALLOWED and origin not in ALLOWED:
             return
         response["Access-Control-Allow-Origin"] = origin or "*"
@@ -37,28 +37,3 @@ class CorsMiddleware:
         response["Access-Control-Allow-Methods"] = ALLOWED_METHODS
         response["Access-Control-Max-Age"] = "86400"
         response["Vary"] = "Origin"
-
-
-class JsonPreflight:
-    """Minimal 204 response so the middleware stays free of Django imports."""
-
-    status_code = 204
-
-    def __init__(self, request):
-        self.request = request
-
-    def __getitem__(self, item):
-        return self
-
-    def __setitem__(self, key, value):
-        return None
-
-    @property
-    def content(self):
-        return b""
-
-    def has_header(self, header):
-        return False
-
-    def close(self):
-        return None
